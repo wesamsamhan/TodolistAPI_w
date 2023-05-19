@@ -1,0 +1,6 @@
+{
+  "dependencies": {
+    "axios": "^1.4.0",
+    "sortablejs": "^1.15.0"
+  }
+}

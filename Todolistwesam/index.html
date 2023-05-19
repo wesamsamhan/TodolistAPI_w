@@ -1,0 +1,235 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://unpkg.com/sortablejs@1.14.0/Sortable.min.css" />
+    <script src="path/to/sortable.min.js"></script>
+
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@4.0.0/dist/css/bootstrap.min.css" integrity="sha384-Gn5384xqQ1aoWXA+058RXPxPg6fy4IWvTNh0E263XmFcJlSAwiGgFAW/dAiS6JXm" crossorigin="anonymous">
+        <style>
+
+                @media (min-width: 576px) {
+                    .modal-dialog {
+                        max-width: 650px;
+                        margin: 0.75rem auto;
+                    }
+                }
+        </style>
+</head>
+<body class="bg-orange-200 flex justify-center items-center h-screen">
+    <script src="https://unpkg.com/vue@3.2.20/dist/vue.global.js"></script>
+    <script src="https://unpkg.com/sortablejs@1.14.0/Sortable.min.js"></script>
+    <div class="container w-full max-w-2xl" id="app">
+        <div class="text-3xl text-center font-bold mb-3 uppercase">Todo List</div>
+        <div>
+            <form action="#" @submit.prevent="addTodo()" method="POST" id="add_todo_form" class="flex justify-center">
+                <input type="text" name="todo" v-model="newTodoText" placeholder="Enter Todo" class="text-xl text-orange-800 placeholder-orange-400 py-2 px-5 bg-orange-100 rounded-l-full outline-orange-300">
+                <button type="submit" class="text-xl text-orange-100 placeholder-orange-400 py-2 pr-5 pl-4 bg-orange-500 rounded-r-full">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4" />
+                    </svg>
+                </button>
+            </form>
+        </div>
+        <div class="bg-gray-100 mt-5 p-5 rounded-xl shadow-lg text-gray-700">
+            <h1 class="font-bold text-xl italic block mb-0 leading-none">Todo's</h1>
+            <small id="todo_stats" class="block mb-5 mt-0 text-xs text-gray-500">{{ remaining }} Todos pending, {{ completed }} Completed.</small>
+            <div class="max-h-80 overflow-y-auto">
+                <table id="todo_table" class="table w-full">
+                    <thead>
+                        <tr>
+                            <th class="text-center px-1 py-2 bg-orange-500 text-orange-100 rounded-tl-xl">#</th>
+                            <th class="text-left px-1 py-2 bg-orange-500 text-orange-100">عرض</th>
+                            <th class="text-left px-1 py-2 bg-orange-500 text-orange-100">Details</th>
+                            <th class="text-left px-1 py-2 bg-orange-500 text-orange-100">Date</th>
+                            <th class="text-left px-1 py-2 bg-orange-500 text-orange-100">Date Completed</th>
+                            <th class="px-1 py-2 bg-orange-500 text-orange-100 rounded-tr-xl">Action</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+       
+                        <div>
+                            <label for="sortSelect">Sort by:</label>
+                            <select id="sortSelect" v-model="sortOption" @change="sortTodos(sortOption)">
+                              <option value="selected" selected>select</option>
+                              <option value="dateAdded">Date Added</option>
+                              <option value="dateCompleted">Date Completed</option>
+                              <option value="userOrder">User Order</option>
+                            </select>
+                          </div>
+                      
+                          <table class="w-full">
+        
+                            <tbody id="todoList" v-sortable="{ onUpdate: updateTodoOrder, group: 'todos' }">
+                              <tr v-if="todos.length <= 0" class="odd:bg-orange-100 even:bg-orange-50">
+                                <td class="text-center px-1 py-2 text-orange-800" colspan="4">No Todos found. Add a few to begin.</td>
+                              </tr>
+                              <tr v-for="(todo, key) in todos" :key="todo.id" :class="`${!todo.completed?'odd:bg-orange-100 even:bg-orange-50 transition duration-300':'bg-green-100 line-through'} `">
+                                <td class="text-center px-1 py-2 text-orange-800">{{ key + 1 }}</td>
+                                <td class="text-center px-1 py-2 text-black-800">
+                                  <button type="button" class="btn btn-info" style="color: black;" @click="openSubTasks(key)">Show Subtasks</button>
+                                </td>
+                                <td class="px-1 py-2 text-orange-800">{{ todo.text }}</td>
+                                <td class="px-1 py-2 text-orange-800">{{ todo.date }}</td>
+                                <td class="px-1 py-2 text-orange-800">{{ todo.date_completed }}</td>
+                            <td class="text-center  px-1 py-2 text-orange-800 flex gap-3 justify-start">
+                               
+                    
+                            
+                                <button v-if="!todo.completed" @click.prevent="markTodoComplete(key)" class="text-orange-600">
+                                    <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                                        <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7" />
+                                    </svg>
+                                </button>
+                                <button @click.prevent="markTodoIncomplete(key)" v-if="todo.completed" class="text-orange-600">
+                                    <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                                        <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
+                                    </svg>
+                                </button>
+                                <button  @click="openEditTask(key,todo)"  class="text-orange-600">
+                                    <svg fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+                                        <path stroke-linecap="round" stroke-linejoin="round" d="M16.862 4.487l1.687-1.688a1.875 1.875 0 112.652 2.652L10.582 16.07a4.5 4.5 0 01-1.897 1.13L6 18l.8-2.685a4.5 4.5 0 011.13-1.897l8.932-8.931zm0 0L19.5 7.125M18 14v4.75A2.25 2.25 0 0115.75 21H5.25A2.25 2.25 0 013 18.75V8.25A2.25 2.25 0 015.25 6H10"></path>
+                                    </svg>
+                                    edit
+                                </button>
+                                <button v-if="todo.completed" @click.prevent="removeTodo(key)"  class="text-orange-600">
+                                    <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                                        <path stroke-linecap="round" stroke-linejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                                    </svg>
+                                </button>
+                            </td>
+                        </tr>
+
+                    </tbody>
+                  
+
+                </table>
+                <tr>    
+                    <td class="text-left px-1 py-2 bg-orange-500 text-orange-100">Percentage Complete:</td>
+                    <td colspan="3" class="px-1 py-2 text-orange-800">{{ percentage }}%</td>
+                  </tr>
+                  <tr>
+                    <td colspan="4" class="px-1 py-2">
+                      <button @click="calculateDailyProgress()" class="ml-3 inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-orange-500 hover:bg-orange-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-orange-500">حساب التقدم اليومي {{averageCompletion}}</button>
+                    </td>
+                  </tr>
+                  
+
+                <div class="modal fade" v-for="(todo,key) in todos" :key="key"  ref="modal" :id="'exampleModal'+key" tabindex="-1" role="dialog" aria-labelledby="exampleModalLabel" aria-hidden="true">
+                    <div class="modal-dialog" role="document">
+                        <div class="modal-content">
+                            <div class="modal-header">
+                                <div class="text-3xl text-center font-bold mb-3 uppercase">Sub Todo List</div>
+                                <div>
+                                    <form action="#" @submit.prevent="addSubTodo(todo)" method="POST"  class="flex justify-center">
+                                        <input type="text" name="todo" v-model="newSubTodoText" placeholder="Enter Sub Todo" class="text-xl text-orange-800 placeholder-orange-400 py-2 px-5 bg-orange-100 rounded-l-full outline-orange-300">
+                                        <button type="submit" class="text-xl text-orange-100 placeholder-orange-400 py-2 pr-5 pl-4 bg-orange-500 rounded-r-full">
+                                            <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                                                <path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4" />
+                                            </svg>
+                                        </button>
+                                    </form>
+                                </div>
+                            </div>
+                            <div class="modal-body">
+                                <table  class="table w-full">
+                                    <thead>
+                                    <tr>
+                                        <th class="text-center px-1 py-2 bg-orange-500 text-orange-100 rounded-tl-xl">#</th>
+                                        <th class="text-left px-1 py-2 bg-orange-500 text-orange-100">Details</th>
+                                        <th class="text-left px-1 py-2 bg-orange-500 text-orange-100">Due Date</th>
+                                        <th class="px-1 py-2 bg-orange-500 text-orange-100 rounded-tr-xl">Action</th>
+                                    </tr>
+                                    </thead>
+                                    <tbody>
+
+
+
+                                    <tr v-if="todos.length <= 0" class="odd:bg-orange-100 even:bg-orange-50">
+                                        <td class="text-center  px-1 py-2 text-orange-800" colspan="4">No Todos found. Add a few to begin.</td>
+                                    </tr>
+                                    <tr v-for="(todo,key) in todos" :key="key" :class="`${!todo.completed?'odd:bg-orange-100 even:bg-orange-50 transition duration-300':'bg-green-100 line-through'} `">
+                                    <tr v-for="(task,key2) in todo.subTodos" :key="key2" :class="`${!task.completed?'odd:bg-orange-100 even:bg-orange-50 transition duration-300':'bg-green-100 line-through'} `">
+                                        <td class="text-center  px-1 py-2 text-orange-800">{{ key2 + 1 }}</td>
+
+                                        <td class=" px-1 py-2 text-orange-800">{{ task.text }}</td>
+                                        <td class=" px-1 py-2 text-orange-800">{{ task.date }}</td>
+                                        <td class="text-center  px-1 py-2 text-orange-800 flex gap-3 justify-start">
+
+
+
+                                            <button v-if="!task.completed" @click.prevent="markSubTodoComplete(key2,todo)" class="text-orange-600">
+                                                <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                                                    <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7" />
+                                                </svg>
+                                            </button>
+                                            <button @click.prevent="markSubTodoIncomplete(key2,todo)" v-if="task.completed" class="text-orange-600">
+                                                <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                                                    <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
+                                                </svg>
+                                            </button>
+                                            <button v-if="task.completed" @click.prevent="removeSubTodo(key2,todo)"  class="text-orange-600">
+                                                <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                                                    <path stroke-linecap="round" stroke-linejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                                                </svg>
+                                            </button>
+                                        </td>
+                                    </tr>
+
+                                    </tr>
+
+                                    </tbody>
+                                </table>
+                            </div>
+<!--                            <div class="modal-footer">-->
+<!--                                <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>-->
+<!--                                <button type="button" class="btn btn-primary">Save changes</button>-->
+<!--                            </div>-->
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+            <div class="modal fade" v-for="(todo,key) in todos" :key="key"  ref="modal" :id="'editTask'+key" tabindex="-1" role="dialog" aria-labelledby="editTask" aria-hidden="true">
+                <div class="modal-dialog" role="document">
+                    <div class="modal-content">
+                        <div class="modal-header">
+                            <div class="text-3xl text-center font-bold mb-3 uppercase">Edit Task</div>
+                            <div>
+                                <form action="#" @submit.prevent="editTodo(key,todo)" method="POST"  class="flex justify-center">
+                                    <input type="text" name="todo" v-model="editTodoText"  class="text-xl text-orange-800 placeholder-orange-400 py-2 px-5 bg-orange-100 rounded-l-full outline-orange-300">
+                                    <button type="submit" class="text-xl text-orange-100 placeholder-orange-400 py-2 pr-5 pl-4 bg-orange-500 rounded-r-full">
+                                        <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                                            <path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4" />
+                                        </svg>
+                                    </button>
+                                </form>
+                            </div>
+                        </div>
+
+                    </div>
+                </div>
+            </div>
+
+
+        </div>
+
+    </div>
+    <script src="https://unpkg.com/vue@3"></script>
+
+    <script src="./script-vue.js"></script>
+
+    <script>
+        if(localStorage.getItem('is_login') == 'false'  || !localStorage.getItem('is_login')){
+            window.location.href = 'login.html'
+        }
+    </script>
+    <script src="https://code.jquery.com/jquery-3.2.1.slim.min.js" integrity="sha384-KJ3o2DKtIkvYIK3UENzmM7KCkRr/rE9/Qpg6aAZGJwFDMVNA/GpGFF93hXpG5KkN" crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/popper.js@1.12.9/dist/umd/popper.min.js" integrity="sha384-ApNbgh9B+Y1QKtv3Rn7W3mgPxhU9K/ScQsAP7hUibX39j7fakFPskvXusvfa0b4Q" crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@4.0.0/dist/js/bootstrap.min.js" integrity="sha384-JZR6Spejh4U02d8jOt6vLEHfe/JQGiRRSQQxSfFWpi1MquVdAyjUar5+76PVCmYl" crossorigin="anonymous"></script>
+</body>
+</html>

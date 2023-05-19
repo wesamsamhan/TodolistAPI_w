@@ -1,0 +1,67 @@
+<!DOCTYPE HTML>
+<html>
+<head>
+	<title>متوسط نسبة الانجاز في اليوم</title>
+	<script type="text/javascript" src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body style="background-color: #F9D1C9">
+	<style>
+		.container {
+			display: flex;
+			flex-direction: column;
+			align-items: center;
+			justify-content: center;
+			height: 100vh;
+			font-family: Arial, sans-serif;
+			color: white;
+			text-align: center;
+		}
+		h1 {
+			font-size: 3rem;
+			margin-bottom: 2rem;
+		}
+		.chart-container {
+			position: relative;
+			width: 200px;
+			height: 200px;
+		}
+		.center-text {
+			position: absolute;
+			top: 50%;
+			left: 50%;
+			transform: translate(-50%, -50%);
+			font-size: 2rem;
+		}
+	</style>
+	<div class="container">
+		<h1>Task Completion Percentage Per Day</h1>
+		<div class="chart-container">
+			<canvas id="myChart"></canvas>
+			<div class="center-text">31%</div>
+		</div>
+	</div>
+	<script>
+		const ctx = document.getElementById('myChart');
+
+		new Chart(ctx, {
+		  type: 'doughnut',
+		  data: {
+		    labels: ['Tasks Done', 'Tasks Left'],
+		    datasets: [{
+		      data: [31, 69],
+		      backgroundColor: ['#53A963', '#E64C3C'],
+		      borderWidth: 0
+		    }]
+		  },
+		  options: {
+		    cutout: '75%',
+		    plugins: {
+		      legend: {
+		        display: false
+		      }
+		    }
+		  }
+		});
+	</script>
+</body>
+</html>

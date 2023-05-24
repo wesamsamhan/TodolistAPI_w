@@ -18,7 +18,9 @@ const Register = async (req, res) => {
     const { error, value } = userValidator.validate(req.body);
 
     if (error) {
-      return res.status(403).send({ error: error.details[0].message });
+      //bad req
+      return res.status(400).send({ error: error.details[0].message });
+
     }
 
     const userExist = await UserModel.findOne({ username: value.username });
@@ -28,13 +30,13 @@ const Register = async (req, res) => {
 
     const newUser = new UserModel(value);
     await newUser.save();
-
+//jsonwebtoken.sign(payload, secretOrPrivateKey)
     const token = jsonwebtoken.sign(
       { id: newUser._id },
       process.env.SECRET_KEY
     );
 
-    return res.status(201).json({
+    return res.status(200).json({
       data: newUser,
       token: token,
     });
@@ -43,7 +45,6 @@ const Register = async (req, res) => {
   }
 };
 
-// @docs getAllUsers
 // @access public
 // @router public  localhost:5000/api/v1/auth/SignIn
 const SignIn = async (req, res, next) => {
@@ -141,8 +142,7 @@ const UpdateUserById = async (req, res) => {
     if (!result) {
       res.status(404).json({ message: `User not found By id : ${id}` });
     } else {
-      res
-        .status(200)
+      res .status(200)
         .json({ message: `Success Users Update By id : ${id}`, data: result });
     }
   } catch {

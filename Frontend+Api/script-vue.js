@@ -10,6 +10,7 @@ Vue.createApp({
             is_login: false,
             email: '',
             password: '',
+            averageCompletion:0,
             baseUrl:'http://127.0.0.1:5000/api/v1',
             newSubTodoText:null,
             user:{
@@ -25,23 +26,18 @@ Vue.createApp({
             users: [
                 {email: 'test1', password: 'password'},
             ],
-            todos: [
-                // {
-                //     text: 'Learn Node ', completed: false, date: '2022-01-01', date_completed: null, subTodos: [
-                //         {text: 'Learn Node js (Sub1)', completed: true, date: '2022-01-01'},
-                //         {text: 'Learn Node js (Sub2)', completed: false, date: '2022-01-01'}
-                //     ]
-                // },
-                // {text: 'Learn Vue', completed: false, date: '2022-02-01', date_completed: null, subTodos: []},
-               
-            ],
+            todos: [],
             sortOption: 'selected' // الخيار الافتراضي هو تاريخ الإضافة
         }
     },
    
     
     mounted(){
-        new Sortable(document.getElementById('todoList'));
+        new Sortable(document.getElementById('todoList'),{
+            onUpdate: this.updateTodoOrder,
+            group: 'todos'
+          });
+
         if(window.location.href.includes('index.html')){
 
             axios.get(this.baseUrl+'/mission/GetMission', {
@@ -62,13 +58,18 @@ Vue.createApp({
     },
     methods: {
 
+        updateTodoOrder(event){
+            // console.log("event.to.children",event.to.children[0])
+            // const updatedOrder = Array.from(event.to.children).map((item) => item.dataset.id);
+
+            // console.log(updatedOrder)
+        },
         logout(){
           localStorage.clear()
             window.location.reload()
         },
 
 
-        // الأساليب هنا
         addTodo() {
             if (this.task.text == '' || !this.task.text) {
                 alert("أدخل نص");
@@ -115,18 +116,33 @@ Vue.createApp({
             $('#editTask' + todo._id).modal('hide')
         },
         calculateDailyProgress() {
-            const currentDate = new Date().toISOString().slice(0, 10);
-            const todayTasks = this.todos.filter(todo => todo.created_at === currentDate);
-            const todayTasksCount = todayTasks.length;
-            const todayCompletedCount = todayTasks.filter(todo => todo.status).length;
-            const progressPercentage = todayTasksCount === 0 ? 0 : Math.round((todayCompletedCount / todayTasksCount) * 100);
-            alert(`متوسط نسبة الإنجاز في اليوم هي ${progressPercentage}%`);
+
+            axios.get(this.baseUrl+'/mission/dailyAchi' ,
+                {
+                    headers: {
+                        'Authorization': 'Bearer '+ JSON.parse(localStorage.getItem('token'))
+                    }
+                }
+            ).then(  ({data}) => {
+
+                this.averageCompletion = data.data
+            alert(`متوسط نسبة الإنجاز في اليوم هي ${data.data}%`);
+
+
+            }).catch(error => {
+                alert(error.response.data.message);
+            });
+            // const currentDate = new Date();
+            // const todayTasks = this.todos.filter(todo => todo.created_at === currentDate);
+            // const todayTasksCount = todayTasks.length;
+            // const todayCompletedCount = todayTasks.filter(todo => todo.status).length;
+            // const progressPercentage = todayTasksCount === 0 ? 0 : Math.round((todayCompletedCount / todayTasksCount) * 100);
+            // alert(`متوسط نسبة الإنجاز في اليوم هي ${progressPercentage}%`);
         },
 
 
         markTodoComplete(key,todo) {
             var currentDate = new Date();
-            this.task.idU = this.getUser._id
             axios.post(this.baseUrl+'/mission/UpdateMissionById/'+todo._id ,{status:true,completedOn:currentDate},
                 {
                     headers: {
@@ -143,7 +159,6 @@ Vue.createApp({
 
         },
         markTodoIncomplete(key,todo) {
-            this.task.idU = this.getUser._id
 
             axios.post(this.baseUrl+'/mission/UpdateMissionById/'+todo._id ,{status:false,completedOn:null},
                 {
@@ -274,7 +289,7 @@ Vue.createApp({
             }
         },
         getAllMissions(query = null){
-            query = query??'';
+            query = query?query:'';
             axios.get(this.baseUrl+'/mission/GetMission'+query,
                 {
                     headers: {
@@ -394,28 +409,18 @@ Vue.createApp({
                 case 'dateAdded':
                     var query = '?sortByType=1'
                     this.getAllMissions(query)
-                    // this.todos.sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
                     break;
                 case 'dateCompleted':
                     var query = '?sortByType=2'
                     this.getAllMissions(query)
-                    // this.todos.sort((a, b) => new Date(b.completedOn) - new Date(a.completedOn));
                     break;
                 case 'userOrder':
                     var query = '?sortByType=3'
                     this.getAllMissions(query)
-                    // this.todos.sort((a, b) => {
-                    //     if (a.userOrder && b.userOrder) {
-                    //         return a.userOrder - b.userOrder;
-                    //     } else if (a.userOrder) {
-                    //         return -1;
-                    //     } else if (b.userOrder) {
-                    //         return 1;
-                    //     } else {
-                    //         return 0;
-                    //     }
-                    // });
                     break;
+                    default : 
+                    this.getAllMissions(query) 
+                   
             }
         }
     },
@@ -439,16 +444,16 @@ Vue.createApp({
                 return Math.round((completed / total) * 100);
             }
         },
-        averageCompletion() {
-            const today = new Date().toISOString().slice(0, 10); // حصول على تاريخ اليوم الحالي
-            const todayTodos = this.todos.filter(todo => todo.created_at === today); // تصفية المهام بتاريخ اليوم الحالي
-            const todayCompleted = todayTodos.filter(todo => todo.status).length; // حساب عدد المهام المكتملة بتاريخ اليوم الحالي
-            if (todayTodos.length === 0) { // التأكد من وجود مهام بتاريخ اليوم الحالي
-                return 0;
-            } else {
-                return Math.round((todayCompleted / todayTodos.length) * 100); // حساب متوسط نسبة الإنجاز بتاريخ اليوم الحالي
-            }
-        },
+        // averageCompletion() {
+        //     const today = new Date().toISOString().slice(0, 10); // حصول على تاريخ اليوم الحالي
+        //     const todayTodos = this.todos.filter(todo => todo.created_at === today); 
+        //     const todayCompleted = todayTodos.filter(todo => todo.status).length; 
+        //     if (todayTodos.length === 0) { // التأكد من وجود مهام بتاريخ اليوم الحالي
+        //         return 0;
+        //     } else {
+        //         return Math.round((todayCompleted / todayTodos.length) * 100); 
+        //     }
+        // },
 
 
     }
